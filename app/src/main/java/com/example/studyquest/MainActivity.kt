@@ -1,3 +1,4 @@
+
 package com.example.studyquest
 
 import android.os.Bundle
@@ -7,21 +8,28 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.studyquest.ui.home.LandingScreen
 import com.example.studyquest.ui.theme.StudyQuestTheme
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             StudyQuestTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
+                Scaffold(
+                    modifier = Modifier.fillMaxSize()
+                ) { innerPadding ->
+
+                    LandingScreen(
+                        onStartLearning = {
+                            // Navigation will be implemented next.
+                        },
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -30,18 +38,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun LandingScreenPreview() {
     StudyQuestTheme {
-        Greeting("Android")
+        LandingScreen(
+            onStartLearning = {}
+        )
     }
 }
