@@ -2,6 +2,7 @@
 package com.example.studyquest.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -14,6 +15,7 @@ import com.example.studyquest.ui.home.LandingScreen
 import com.example.studyquest.ui.quiz.QuizScreen
 import com.example.studyquest.ui.settings.SettingsScreen
 import com.example.studyquest.ui.statistics.StatisticsScreen
+import com.example.studyquest.ui.viewmodel.QuizHistoryViewModel
 
 private object Routes {
     const val HOME = "home"
@@ -24,6 +26,7 @@ private object Routes {
 
 @Composable
 fun StudyQuestNavHost(
+    historyViewModel: QuizHistoryViewModel,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
@@ -44,13 +47,19 @@ fun StudyQuestNavHost(
         composable(Routes.HOME) {
             LandingScreen(
                 onStartLearning = {
-                    navController.navigate(Routes.QUIZ)
+                    navController.navigate(Routes.QUIZ) {
+                        launchSingleTop = true
+                    }
                 },
                 onOpenSettings = {
-                    navController.navigate(Routes.SETTINGS)
+                    navController.navigate(Routes.SETTINGS) {
+                        launchSingleTop = true
+                    }
                 },
                 onOpenStatistics = {
-                    navController.navigate(Routes.STATISTICS)
+                    navController.navigate(Routes.STATISTICS) {
+                        launchSingleTop = true
+                    }
                 },
                 largeTextEnabled = largeTextEnabled
             )
@@ -60,6 +69,17 @@ fun StudyQuestNavHost(
             QuizScreen(
                 difficulty = difficulty,
                 largeTextEnabled = largeTextEnabled,
+                saveStatus = historyViewModel.saveStatus,
+                onStartQuiz = {
+                    historyViewModel.resetSaveStatus()
+                },
+                onQuizCompleted = { level, correct, total ->
+                    historyViewModel.saveQuizResult(
+                        difficulty = level,
+                        correctAnswers = correct,
+                        totalQuestions = total
+                    )
+                },
                 onBack = {
                     navController.popBackStack()
                 }
@@ -71,7 +91,9 @@ fun StudyQuestNavHost(
                 difficulty = difficulty,
                 largeTextEnabled = largeTextEnabled,
                 onDifficultyChange = { difficulty = it },
-                onLargeTextChange = { largeTextEnabled = it },
+                onLargeTextChange = {
+                    largeTextEnabled = it
+                },
                 onBack = {
                     navController.popBackStack()
                 }
@@ -79,7 +101,11 @@ fun StudyQuestNavHost(
         }
 
         composable(Routes.STATISTICS) {
+            val sessions by historyViewModel.sessions
+                .collectAsState()
+
             StatisticsScreen(
+                sessions = sessions,
                 onBack = {
                     navController.popBackStack()
                 }

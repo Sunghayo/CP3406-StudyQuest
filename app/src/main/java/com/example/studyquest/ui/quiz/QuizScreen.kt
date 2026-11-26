@@ -12,11 +12,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.studyquest.domain.quiz.QuizBank
 import com.example.studyquest.domain.quiz.QuizLogic
+import com.example.studyquest.ui.viewmodel.SaveStatus
 
 @Composable
 fun QuizScreen(
     difficulty: String,
     largeTextEnabled: Boolean,
+    saveStatus: SaveStatus,
+    onStartQuiz: () -> Unit,
+    onQuizCompleted: (String, Int, Int) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -45,6 +49,7 @@ fun QuizScreen(
     }
 
     fun restartQuiz() {
+        onStartQuiz()
         questionIndex = 0
         selectedOption = -1
         correctAnswers = 0
@@ -83,7 +88,9 @@ fun QuizScreen(
                 )
 
                 Text(
-                    text = "Answer 10 vocabulary questions. Read each English definition and select the matching word.",
+                    text = "Answer 10 vocabulary questions. " +
+                            "Read each definition and select " +
+                            "the matching English word.",
                     style = MaterialTheme.typography.bodyLarge
                 )
 
@@ -132,13 +139,72 @@ fun QuizScreen(
                     }
                 }
 
-                Text(
-                    text = "Learning progress storage will be added in a later stage.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                when (saveStatus) {
+                    SaveStatus.IDLE -> {
+                        Text(
+                            text = "Your results have not been saved.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+
+                        Button(
+                            onClick = {
+                                onQuizCompleted(
+                                    difficulty,
+                                    correctAnswers,
+                                    questions.size
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Save Results")
+                        }
+                    }
+
+                    SaveStatus.SAVING -> {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Text(
+                            text = "Saving your results...",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    SaveStatus.SAVED -> {
+                        Text(
+                            text = "Results saved successfully!",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    SaveStatus.ERROR -> {
+                        Text(
+                            text = "Could not save your results. " +
+                                    "Please try again.",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+
+                        Button(
+                            onClick = {
+                                onQuizCompleted(
+                                    difficulty,
+                                    correctAnswers,
+                                    questions.size
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Retry Saving")
+                        }
+                    }
+                }
 
                 Button(
                     onClick = { restartQuiz() },
+                    enabled = saveStatus != SaveStatus.SAVING,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Try Again")
@@ -215,19 +281,19 @@ fun QuizScreen(
                 }
 
                 if (selectedOption != -1) {
-                    val isCorrect = QuizLogic.isCorrect(
+                    val correct = QuizLogic.isCorrect(
                         question,
                         selectedOption
                     )
 
                     Text(
-                        text = if (isCorrect) {
+                        text = if (correct) {
                             "Correct Answer!"
                         } else {
                             "Incorrect Answer"
                         },
                         style = MaterialTheme.typography.titleLarge,
-                        color = if (isCorrect) {
+                        color = if (correct) {
                             MaterialTheme.colorScheme.primary
                         } else {
                             MaterialTheme.colorScheme.error
@@ -235,7 +301,8 @@ fun QuizScreen(
                     )
 
                     Text(
-                        text = "Correct word: ${question.options[question.correctIndex]}",
+                        text = "Correct word: " +
+                                question.options[question.correctIndex],
                         style = MaterialTheme.typography.titleMedium
                     )
 
@@ -251,6 +318,12 @@ fun QuizScreen(
                                 selectedOption = -1
                             } else {
                                 finished = true
+
+                                onQuizCompleted(
+                                    difficulty,
+                                    correctAnswers,
+                                    questions.size
+                                )
                             }
                         },
                         modifier = Modifier.fillMaxWidth()

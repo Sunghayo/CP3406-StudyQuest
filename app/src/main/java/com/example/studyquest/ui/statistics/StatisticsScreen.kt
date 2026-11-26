@@ -8,12 +8,44 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.studyquest.data.local.QuizSessionEntity
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun StatisticsScreen(
+    sessions: List<QuizSessionEntity>,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val quizzesCompleted = sessions.size
+
+    val questionsAnswered = sessions.sumOf {
+        it.totalQuestions
+    }
+
+    val correctAnswers = sessions.sumOf {
+        it.correctAnswers
+    }
+
+    val accuracy = if (questionsAnswered > 0) {
+        correctAnswers * 100.0 / questionsAnswered
+    } else {
+        0.0
+    }
+
+    val accuracyText = String.format(
+        Locale.ENGLISH,
+        "%.1f%%",
+        accuracy
+    )
+
+    val dateFormatter = SimpleDateFormat(
+        "dd MMM yyyy, HH:mm",
+        Locale.ENGLISH
+    )
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -35,17 +67,17 @@ fun StatisticsScreen(
 
         StatisticCard(
             title = "Quizzes Completed",
-            value = "0"
+            value = quizzesCompleted.toString()
         )
 
         StatisticCard(
             title = "Questions Answered",
-            value = "0"
+            value = questionsAnswered.toString()
         )
 
         StatisticCard(
             title = "Overall Accuracy",
-            value = "0%"
+            value = accuracyText
         )
 
         HorizontalDivider()
@@ -55,14 +87,47 @@ fun StatisticsScreen(
             style = MaterialTheme.typography.titleLarge
         )
 
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "No learning sessions yet. Your results will appear here after quiz tracking is implemented.",
-                modifier = Modifier.padding(20.dp),
-                style = MaterialTheme.typography.bodyMedium
-            )
+        if (sessions.isEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "No learning sessions yet. " +
+                            "Complete a quiz to see your progress.",
+                    modifier = Modifier.padding(20.dp),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        } else {
+            sessions.take(5).forEach { session ->
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement =
+                            Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = session.difficulty,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+
+                        Text(
+                            text = "${session.correctAnswers} / " +
+                                    "${session.totalQuestions} correct",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+
+                        Text(
+                            text = dateFormatter.format(
+                                Date(session.completedAt)
+                            ),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
