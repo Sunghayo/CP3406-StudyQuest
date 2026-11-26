@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.studyquest.domain.quiz.QuizBank
 import com.example.studyquest.domain.quiz.QuizLogic
+import com.example.studyquest.ui.viewmodel.DictionaryUiState
 import com.example.studyquest.ui.viewmodel.SaveStatus
 
 @Composable
@@ -19,8 +20,11 @@ fun QuizScreen(
     difficulty: String,
     largeTextEnabled: Boolean,
     saveStatus: SaveStatus,
+    dictionaryState: DictionaryUiState,
     onStartQuiz: () -> Unit,
     onQuizCompleted: (String, Int, Int) -> Unit,
+    onLookupWord: (String) -> Unit,
+    onClearLookup: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -50,6 +54,8 @@ fun QuizScreen(
 
     fun restartQuiz() {
         onStartQuiz()
+        onClearLookup()
+
         questionIndex = 0
         selectedOption = -1
         correctAnswers = 0
@@ -214,6 +220,9 @@ fun QuizScreen(
             else -> {
                 val question = questions[questionIndex]
 
+                val correctWord =
+                    question.options[question.correctIndex]
+
                 Text(
                     text = "Question ${questionIndex + 1} of ${questions.size}",
                     style = MaterialTheme.typography.titleMedium
@@ -301,8 +310,7 @@ fun QuizScreen(
                     )
 
                     Text(
-                        text = "Correct word: " +
-                                question.options[question.correctIndex],
+                        text = "Correct word: $correctWord",
                         style = MaterialTheme.typography.titleMedium
                     )
 
@@ -311,8 +319,116 @@ fun QuizScreen(
                         style = MaterialTheme.typography.bodyLarge
                     )
 
+                    HorizontalDivider()
+
+                    Text(
+                        text = "Dictionary Insights",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+
+                    Text(
+                        text = "Explore an additional dictionary meaning online.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    when (val lookup = dictionaryState) {
+                        DictionaryUiState.Idle -> {
+                            OutlinedButton(
+                                onClick = {
+                                    onLookupWord(correctWord)
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("View Dictionary Definition")
+                            }
+                        }
+
+                        DictionaryUiState.Loading -> {
+                            Row(
+                                horizontalArrangement =
+                                    Arrangement.spacedBy(12.dp)
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 2.dp
+                                )
+
+                                Text(
+                                    text = "Loading dictionary definition...",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+
+                        is DictionaryUiState.Success -> {
+                            ElevatedCard(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement =
+                                        Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = lookup.insight.word,
+                                        style = MaterialTheme.typography.titleLarge
+                                    )
+
+                                    Text(
+                                        text = lookup.insight.partOfSpeech,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+
+                                    Text(
+                                        text = lookup.insight.definition,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+
+                                    lookup.insight.example
+                                        ?.takeIf { it.isNotBlank() }
+                                        ?.let { example ->
+                                            Text(
+                                                text = "Example: $example",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        }
+
+                                    Text(
+                                        text = "Source: Free Dictionary API",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            }
+
+                            Text(
+                                text = "Dictionary meanings may differ from the quiz context.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+
+                        is DictionaryUiState.Error -> {
+                            Text(
+                                text = lookup.message,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+
+                            OutlinedButton(
+                                onClick = {
+                                    onLookupWord(correctWord)
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Retry Dictionary Lookup")
+                            }
+                        }
+                    }
+
                     Button(
                         onClick = {
+                            onClearLookup()
+
                             if (questionIndex < questions.lastIndex) {
                                 questionIndex++
                                 selectedOption = -1
@@ -343,7 +459,10 @@ fun QuizScreen(
         HorizontalDivider()
 
         OutlinedButton(
-            onClick = onBack,
+            onClick = {
+                onClearLookup()
+                onBack()
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Back to Home")

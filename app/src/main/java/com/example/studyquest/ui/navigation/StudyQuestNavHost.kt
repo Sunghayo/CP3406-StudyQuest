@@ -15,6 +15,7 @@ import com.example.studyquest.ui.home.LandingScreen
 import com.example.studyquest.ui.quiz.QuizScreen
 import com.example.studyquest.ui.settings.SettingsScreen
 import com.example.studyquest.ui.statistics.StatisticsScreen
+import com.example.studyquest.ui.viewmodel.DictionaryViewModel
 import com.example.studyquest.ui.viewmodel.QuizHistoryViewModel
 
 private object Routes {
@@ -27,6 +28,7 @@ private object Routes {
 @Composable
 fun StudyQuestNavHost(
     historyViewModel: QuizHistoryViewModel,
+    dictionaryViewModel: DictionaryViewModel,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
@@ -66,13 +68,22 @@ fun StudyQuestNavHost(
         }
 
         composable(Routes.QUIZ) {
+            val dictionaryState by dictionaryViewModel.uiState
+                .collectAsState()
+
             QuizScreen(
                 difficulty = difficulty,
                 largeTextEnabled = largeTextEnabled,
+
                 saveStatus = historyViewModel.saveStatus,
+
+                dictionaryState = dictionaryState,
+
                 onStartQuiz = {
                     historyViewModel.resetSaveStatus()
+                    dictionaryViewModel.clearLookup()
                 },
+
                 onQuizCompleted = { level, correct, total ->
                     historyViewModel.saveQuizResult(
                         difficulty = level,
@@ -80,7 +91,17 @@ fun StudyQuestNavHost(
                         totalQuestions = total
                     )
                 },
+
+                onLookupWord = { word ->
+                    dictionaryViewModel.lookupWord(word)
+                },
+
+                onClearLookup = {
+                    dictionaryViewModel.clearLookup()
+                },
+
                 onBack = {
+                    dictionaryViewModel.clearLookup()
                     navController.popBackStack()
                 }
             )
@@ -90,7 +111,9 @@ fun StudyQuestNavHost(
             SettingsScreen(
                 difficulty = difficulty,
                 largeTextEnabled = largeTextEnabled,
-                onDifficultyChange = { difficulty = it },
+                onDifficultyChange = {
+                    difficulty = it
+                },
                 onLargeTextChange = {
                     largeTextEnabled = it
                 },

@@ -70,6 +70,10 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
+    // Retrofit and JSON Converter
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.gson)
+
     // Unit Tests
     testImplementation(libs.junit)
 
