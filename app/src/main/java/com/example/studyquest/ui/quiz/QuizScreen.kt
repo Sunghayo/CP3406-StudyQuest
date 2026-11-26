@@ -11,6 +11,8 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun QuizScreen(
+    difficulty: String,
+    largeTextEnabled: Boolean,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -31,8 +33,19 @@ fun QuizScreen(
 
         Text(
             text = "Vocabulary Quiz",
-            style = MaterialTheme.typography.headlineMedium,
+            style = if (largeTextEnabled) {
+                MaterialTheme.typography.headlineLarge
+            } else {
+                MaterialTheme.typography.headlineMedium
+            },
             fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Selected Difficulty: $difficulty",
+            style = MaterialTheme.typography.titleMedium
         )
 
         Spacer(modifier = Modifier.height(16.dp))
